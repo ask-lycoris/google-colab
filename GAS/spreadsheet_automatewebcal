@@ -33,7 +33,7 @@ function calculateWeeklyWorkHours_SingleLog() {
       // Filter the title
       if (title.includes('XXX') || title.includes('作業：') || title.includes('ミーツ')) {
         
-        // Hide private schedule ミーツ
+        // Hide detail info on private schedule ミーツ
         if (title.includes('ミーツ')) {
           title = '【ミーツ】';
         }
