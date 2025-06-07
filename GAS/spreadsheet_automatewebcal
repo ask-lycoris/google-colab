@@ -1,59 +1,52 @@
-function calculateWeeklyWorkHours() {
+function calculateWeeklyWorkHours_SingleLog() {
   // --- 1. 対象期間（今週の月曜日〜金曜日）を計算 ---
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=日, 1=月, 2=火, ..., 6=土
-
-  // 今週の月曜日を計算
-  // もし今日が日曜(0)なら6日戻す、それ以外なら (dayOfWeek - 1)日戻す
+  const dayOfWeek = today.getDay(); 
   const diffToMonday = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
   const monday = new Date(today);
   monday.setDate(today.getDate() + diffToMonday);
-  monday.setHours(0, 0, 0, 0); // 月曜日の開始時刻（00:00:00）
-
-  // 今週の金曜日を計算
+  monday.setHours(0, 0, 0, 0); 
   const friday = new Date(monday);
   friday.setDate(monday.getDate() + 4);
-  friday.setHours(23, 59, 59, 999); // 金曜日の終了時刻（23:59:59）
+  friday.setHours(23, 59, 59, 999); 
 
   // --- 2. カレンダーから予定を取得 ---
   const calendar = CalendarApp.getDefaultCalendar();
   const events = calendar.getEvents(monday, friday);
 
-  // ログに対象期間を出力
-  Logger.log(`集計期間: ${monday.toLocaleDateString()} 〜 ${friday.toLocaleDateString()}`);
-
+  // --- 3. 結果を一旦配列に保存していく ---
+  const outputLines = [];
+  outputLines.push(`集計期間: ${monday.toLocaleDateString()} 〜 ${friday.toLocaleDateString()}`);
+  
   if (events.length === 0) {
-    Logger.log('対象期間に予定はありません。');
-    return;
-  }
+    outputLines.push('対象期間に予定はありません。');
+  } else {
+    const workHours = {};
+    for (const event of events) {
+      const title = event.getTitle();
 
-  // --- 3. タイトルごとに工数（時間）を合計 ---
-  const workHours = {}; // { "予定タイトル": 合計ミリ秒 } という形式で保存
-
-  for (const event of events) {
-    const title = event.getTitle();
-    const startTime = event.getStartTime();
-    const endTime = event.getEndTime();
-
-    // 予定の長さをミリ秒で計算
-    const durationInMillis = endTime.getTime() - startTime.getTime();
-
-    // タイトルがまだ集計オブジェクトになければ初期化
-    if (!workHours[title]) {
-      workHours[title] = 0;
+      // タイトルに「XXX」または「[作業：]」が含まれている場合のみ処理する
+      if (title.includes('XXX') || title.includes('[作業：]')) {
+        const durationInMillis = event.getEndTime().getTime() - event.getStartTime().getTime();
+        if (!workHours[title]) {
+          workHours[title] = 0;
+        }
+        workHours[title] += durationInMillis;
+      }
     }
-    // 同じタイトルの工数を加算
-    workHours[title] += durationInMillis;
+
+    if (Object.keys(workHours).length === 0) {
+      outputLines.push('\n集計対象の予定（[SFD]または[作業：]を含むもの）は見つかりませんでした。');
+    } else {
+      outputLines.push('\n--- タイトル別 合計工数 ---');
+      for (const title in workHours) {
+        const totalMillis = workHours[title];
+        const totalHours = totalMillis / (1000 * 60 * 60);
+        outputLines.push(`${title}: 合計 ${totalHours.toFixed(2)} 時間`);
+      }
+    }
   }
 
-  // --- 4. 結果を時間単位で出力 ---
-  Logger.log('--- タイトル別 合計工数 ---');
-  for (const title in workHours) {
-    const totalMillis = workHours[title];
-    // ミリ秒を時間に変換 (1000ミリ秒 * 60秒 * 60分)
-    const totalHours = totalMillis / (1000 * 60 * 60);
-
-    // 小数点第2位まで表示
-    Logger.log(`${title}: 合計 ${totalHours.toFixed(2)} 時間`);
-  }
+  // --- 4. 配列を改行でつなげて、最後に1回だけログに出力 ---
+  Logger.log(outputLines.join('\n'));
 }
