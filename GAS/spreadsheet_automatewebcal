@@ -31,7 +31,7 @@ function calculateWeeklyWorkHours_SingleLog() {
       }
 
       // Filter the title
-      if (title.includes('SFD') || title.includes('作業：') || title.includes('ミーツ')) {
+      if (title.includes('XXX') || title.includes('作業：') || title.includes('ミーツ')) {
         
         // Hide private schedule ミーツ
         if (title.includes('ミーツ')) {
