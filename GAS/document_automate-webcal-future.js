@@ -34,12 +34,12 @@ function calculateFutureWeeklyWorkHours_SingleLog() {
       let title = event.getTitle();
 
       // Specify the title to skip
-      if (title.includes('みなさんへ') || (title.includes('認可')) || (title.includes('有留さんのみ参加'))) {
+      if (title.includes('みなさんへ') || (title.includes('認可')) || (title.includes('参加'))) {
         continue;
       }
 
       // Filter the title
-      if (title.includes('SFD') || title.includes('作業：') || title.includes('ミーツ')) {
+      if (title.includes('XXX') || title.includes('作業：') || title.includes('ミーツ')) {
 
         // Hide detail info on private schedule ミーツ
         if (title.includes('ミーツ')) {
