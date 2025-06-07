@@ -1,32 +1,44 @@
 function calculateWeeklyWorkHours_SingleLog() {
-  // --- 1. 対象期間（今週の月曜日〜金曜日）を計算 ---
+  // --- 1. Specify the  target span (last Mon-Fri) ---
   const today = new Date();
-  const dayOfWeek = today.getDay(); 
+  const dayOfWeek = today.getDay();
   const diffToMonday = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
   const monday = new Date(today);
   monday.setDate(today.getDate() + diffToMonday);
-  monday.setHours(0, 0, 0, 0); 
+  monday.setHours(0, 0, 0, 0);
   const friday = new Date(monday);
   friday.setDate(monday.getDate() + 4);
-  friday.setHours(23, 59, 59, 999); 
+  friday.setHours(23, 59, 59, 999);
 
-  // --- 2. カレンダーから予定を取得 ---
+  // --- 2. Get your schedule from your google calender ---
   const calendar = CalendarApp.getDefaultCalendar();
   const events = calendar.getEvents(monday, friday);
 
-  // --- 3. 結果を一旦配列に保存していく ---
+  // --- 3. Store the result ---
   const outputLines = [];
   outputLines.push(`集計期間: ${monday.toLocaleDateString()} 〜 ${friday.toLocaleDateString()}`);
-  
+
   if (events.length === 0) {
     outputLines.push('対象期間に予定はありません。');
   } else {
     const workHours = {};
     for (const event of events) {
-      const title = event.getTitle();
+      let title = event.getTitle();
 
-      // タイトルに「XXX」または「[作業：]」が含まれている場合のみ処理する
-      if (title.includes('XXX') || title.includes('[作業：]')) {
+      // Specify the title to skip
+      if (title.includes('みなさんへ')) {
+        continue;
+      }
+
+      // Filter the title
+      if (title.includes('SFD') || title.includes('作業：') || title.includes('ミーツ')) {
+        
+        // Hide private schedule ミーツ
+        if (title.includes('ミーツ')) {
+          title = '【ミーツ】';
+        }
+
+        // --- Cauculate working time ---
         const durationInMillis = event.getEndTime().getTime() - event.getStartTime().getTime();
         if (!workHours[title]) {
           workHours[title] = 0;
@@ -36,7 +48,7 @@ function calculateWeeklyWorkHours_SingleLog() {
     }
 
     if (Object.keys(workHours).length === 0) {
-      outputLines.push('\n集計対象の予定（[SFD]または[作業：]を含むもの）は見つかりませんでした。');
+      outputLines.push('\n集計対象の予定は見つかりませんでした。');
     } else {
       outputLines.push('\n--- タイトル別 合計工数 ---');
       for (const title in workHours) {
